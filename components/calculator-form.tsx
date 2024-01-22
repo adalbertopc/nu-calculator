@@ -1,8 +1,19 @@
 "use client";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import Input from "./input";
-import { CalculateInvestmentParams } from "~/lib/calculate-investment";
+import { Controller, useForm } from "react-hook-form";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import {
+  CalculateInvestmentParams,
+  TimeType,
+} from "~/lib/calculate-investment";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 interface CalculatorFormProps {
   onSubmitCallback: (data: CalculateInvestmentParams) => void;
@@ -11,14 +22,15 @@ interface CalculatorFormProps {
 export default function CalculatorForm({
   onSubmitCallback,
 }: CalculatorFormProps) {
-  const { register, handleSubmit, watch } = useForm<CalculateInvestmentParams>({
-    defaultValues: {
-      initialMoney: "1000",
-      annualRate: "15",
-      time: "1",
-      timeType: "years",
-    },
-  });
+  const { register, handleSubmit, watch, control, setValue } =
+    useForm<CalculateInvestmentParams>({
+      defaultValues: {
+        initialMoney: "1000",
+        annualRate: "15",
+        time: "1",
+        timeType: "years",
+      },
+    });
 
   const onSubmit = (data: CalculateInvestmentParams) => onSubmitCallback(data);
 
@@ -27,57 +39,78 @@ export default function CalculatorForm({
   }, []);
 
   useEffect(() => {
-    const subscription = watch(() => handleSubmit(onSubmit)());
+    const subscription = watch(
+      ({ initialMoney, annualRate, time, timeType }) =>
+        initialMoney &&
+        annualRate &&
+        time &&
+        timeType &&
+        handleSubmit(onSubmit)()
+    );
     return () => subscription.unsubscribe();
   }, [handleSubmit, watch]);
 
   return (
     <form className="grid gap-4">
-      <Input
-        id="initialMoney"
-        name="initialMoney"
-        label="Cajita inicial ($ MXN)"
-        placeholder="$1000"
-        min={0}
-        step={100}
-        register={register}
-      />
-      <Input
-        id="annualRate"
-        name="annualRate"
-        label="Tasa de rendimiento anual (%)"
-        placeholder="%15"
-        min={0}
-        step={1}
-        register={register}
-      />
-      <div className="grid grid-cols-3 gap-2">
+      <div>
+        <Label htmlFor="initialMoney" className="inline-block mb-3">
+          Cajita inicial ($ MXN)
+        </Label>
         <Input
-          id="time"
-          name="time"
-          label="Cantidad de tiempo"
-          placeholder="1"
+          id="initialMoney"
+          placeholder="$ 1000"
+          min={0}
+          step={500}
+          className="text-lg"
+          type="number"
+          {...register("initialMoney")}
+        />
+      </div>
+      <div>
+        <Label htmlFor="annualRate" className="inline-block mb-3">
+          Tasa de rendimiento anual (%)
+        </Label>
+        <Input
+          id="annualRate"
+          placeholder="% 15"
           min={0}
           step={1}
-          register={register}
-          className="col-span-2"
+          className="text-lg"
+          type="number"
+          {...register("annualRate")}
         />
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="col-span-2">
+          <Label htmlFor="time" className="inline-block mb-3">
+            Cantidad de tiempo
+          </Label>
+          <Input
+            id="time"
+            placeholder="1"
+            min={0}
+            step={1}
+            className="text-lg"
+            {...register("time")}
+          />
+        </div>
         <div>
-          <label
-            htmlFor="countries"
-            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-          >
+          <Label htmlFor="time" className="inline-block mb-3">
             Unidad
-          </label>
-          <select
-            id="timeType"
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-            {...register("timeType")}
+          </Label>
+          <Select
+            defaultValue="years"
+            onValueChange={(v: TimeType) => setValue("timeType", v)}
           >
-            <option value="years">Años</option>
-            <option value="months">Meses</option>
-            <option value="days">Días</option>
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="" defaultValue="years" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="years">Años</SelectItem>
+              <SelectItem value="months">Meses</SelectItem>
+              <SelectItem value="days">Días</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </form>
